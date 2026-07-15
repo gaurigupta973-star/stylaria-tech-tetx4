@@ -1,0 +1,6 @@
+{
+  "name": "nova-backend-gemini",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NOVA AI chat backend for Stylaria Tech, powered by Google Gemini (free tier) - Vercel serverless function"
+}
