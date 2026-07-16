@@ -68,7 +68,7 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
 
     // ---- Lead capture: if the user's message contains a phone or email, log it ----
     const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const phoneMatch = message.match(/(\+?\d[\d\s-]{7,}\d)/);
+    const phoneMatch = message.match(/(\+?\d[\d\s-]{4,}\d)/);
 
     if ((emailMatch || phoneMatch) && process.env.LEADS_WEBHOOK_URL) {
       // Fire-and-forget — don't make the user wait for the sheet write
