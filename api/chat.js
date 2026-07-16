@@ -66,7 +66,22 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a reply.";
 
-    // ---- Lead capture: if the user's message contains a phone or email, log it ----
+    // ---- Log every exchange (full chat history) ----
+    if (process.env.LEADS_WEBHOOK_URL) {
+      fetch(process.env.LEADS_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "chat",
+          session_id: req.body?.session_id || "",
+          message,
+          reply,
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch((e) => console.error("Chat log webhook failed:", e.message));
+    }
+
+    // ---- Lead capture: if the user's message contains a phone or email, log it separately ----
     const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
     const phoneMatch = message.match(/(\+?\d[\d\s-]{4,}\d)/);
 
@@ -76,6 +91,7 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          type: "lead",
           message,
           email: emailMatch ? emailMatch[0] : "",
           phone: phoneMatch ? phoneMatch[0] : "",
