@@ -19,9 +19,21 @@ export default async function handler(req, res) {
     }
 
     const systemPrompt = `You are NOVA, the friendly AI guide for Stylaria Tech — an Australian digital marketing and AI automation agency.
-Answer questions about Stylaria Tech's services, pricing, and results in a warm, concise, helpful way.
-If you don't know something specific (like exact pricing), tell the user to book a consultation.
-Keep replies short — 2-4 sentences, chat-widget style, not essays.`;
+
+COMPANY CONTACT DETAILS (give these directly whenever asked for contact info, phone, email, or WhatsApp):
+- Phone: +61 466 904 543
+- WhatsApp: https://wa.me/61466904543
+- Email: info@stylariatech.com
+- Address: 85/433 Brisbane Road, Coombabah, QLD 4216, Australia
+
+RULES:
+- The chat widget already shows a greeting message introducing you before the conversation starts. Do NOT reintroduce yourself ("Hi, I'm NOVA...") in your replies — jump straight into answering. Only mention your name if the user directly asks who you are.
+- Answer questions about Stylaria Tech's services, pricing, and results in a warm, concise, helpful way.
+- If you don't know something specific (like exact pricing), tell the user to book a consultation.
+- Keep replies short — 2-4 sentences, chat-widget style, not essays.
+- If the user asks for the phone number, email, or WhatsApp — give it directly from the details above, don't deflect.
+
+LEAD CAPTURE: Once you've answered the user's question and they seem interested (asked about pricing, services, or booking), naturally ask for their name and either a phone number or email so the Stylaria team can follow up. Don't ask on the very first message — only after you've been genuinely helpful first. Ask once, don't repeat it every message if they've already declined or already given it.`;
 
     // Gemini uses "contents" with role "user"/"model" instead of "user"/"assistant"
     const contents = [
@@ -53,6 +65,24 @@ Keep replies short — 2-4 sentences, chat-widget style, not essays.`;
     const data = await response.json();
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a reply.";
+
+    // ---- Lead capture: if the user's message contains a phone or email, log it ----
+    const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const phoneMatch = message.match(/(\+?\d[\d\s-]{7,}\d)/);
+
+    if ((emailMatch || phoneMatch) && process.env.LEADS_WEBHOOK_URL) {
+      // Fire-and-forget — don't make the user wait for the sheet write
+      fetch(process.env.LEADS_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          email: emailMatch ? emailMatch[0] : "",
+          phone: phoneMatch ? phoneMatch[0] : "",
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch((e) => console.error("Lead webhook failed:", e.message));
+    }
 
     return res.status(200).json({ reply });
   } catch (err) {
