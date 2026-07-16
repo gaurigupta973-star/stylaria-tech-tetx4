@@ -66,19 +66,42 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a reply.";
 
-    // ---- Lead capture: if the user's message contains a phone or email, log it ----
+    // ---- Log every exchange (full chat history) ----
+    if (process.env.LEADS_WEBHOOK_URL) {
+      fetch(process.env.LEADS_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "chat",
+          session_id: req.body?.session_id || "",
+          message,
+          reply,
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch((e) => console.error("Chat log webhook failed:", e.message));
+    }
+
+    // ---- Lead capture: if the user's message contains a phone or email, log it separately ----
     const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const phoneMatch = message.match(/(\+?\d[\d\s-]{7,}\d)/);
+    const phoneMatch = message.match(/(\+?\d[\d\s-]{4,}\d)/);
+    const nameMatch = message.match(/(?:my name is|i am|i'm|this is)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
 
     if ((emailMatch || phoneMatch) && process.env.LEADS_WEBHOOK_URL) {
+      var histArr = Array.isArray(history) ? history : [];
+      var firstUserMsg = histArr.find(function (h) { return h.role === "user"; });
+      var initialQuery = firstUserMsg ? firstUserMsg.content : message;
+
       // Fire-and-forget — don't make the user wait for the sheet write
       fetch(process.env.LEADS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message,
+          type: "lead",
+          session_id: req.body?.session_id || "",
+          name: nameMatch ? nameMatch[1] : "",
           email: emailMatch ? emailMatch[0] : "",
           phone: phoneMatch ? phoneMatch[0] : "",
+          query: initialQuery,
           timestamp: new Date().toISOString(),
         }),
       }).catch((e) => console.error("Lead webhook failed:", e.message));
