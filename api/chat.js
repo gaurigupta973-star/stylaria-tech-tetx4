@@ -22,8 +22,7 @@ export default async function handler(req, res) {
 === STYLARIA TECH — OFFICIAL WEBSITE CONTENT (use ONLY this to answer) ===
 
 COMPANY OVERVIEW
-Stylaria Tech Pty Ltd was established in September 2025, based on the Gold Coast, Queensland, Australia. It's an integrated digital marketing and AI automation agency serving clients across Australia and internationally (remote delivery, no lock-in contracts). Founder & Strategist: Aryan Dwivedi, 11+ years' experience across 100+ brands in fashion, real estate, ecommerce, hospitality, trades, migration, healthcare, and education.
-
+Stylaria Tech Pty Ltd was established in September 2025, based on the Gold Coast, Queensland, Australia. It's an integrated digital marketing and AI automation agency serving clients across Australia and internationally (remote delivery, no lock-in contracts). Founder & Strategist: Aryan Dwivedi, 11+ years' experience across 100+ brands in fashion, real estate, ecommerce, hospitality, trades, migration, healthcare, and education. Every engagement is led personally by Aryan, ensuring a hands-on approach and exceptional results.
 STATS: 11+ years experience (via founder), 100+ brands scaled, 5.0 Google rating. Certified: Meta Business Partner, Google Partner, Shopify Partner.
 
 SERVICES
