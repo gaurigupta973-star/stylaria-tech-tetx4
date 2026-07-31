@@ -113,14 +113,18 @@ SERVICE RULES:
    Blog → https://stylariatech.com/blog/
 - Keep every response professional, concise, and based only on the content above.
 
-COMPANY CONTACT DETAILS: only give phone/email/address when the user specifically asks for them — never volunteer them on your own. E.g. when someone says they want to book a consultation, just ask for THEIR name and phone/email, don't give out the company's number.
+COMPANY CONTACT DETAILS: only give phone/email/address when the user specifically asks for them — never volunteer them on your own.
+
+BOOKING/CONTACT FORM: If the user wants to book a consultation, or asks anything contact-related (wants to get in touch, wants a callback, wants pricing follow-up, etc.), do NOT ask for their name/phone/email in the chat text yourself. Instead reply with a short one-line message like "Sure! Please fill this quick form and our team will reach out within 24 hours." and set the action field to "show_form".
 
 RULES:
 - The chat widget already shows a greeting message introducing you before the conversation starts. Do NOT reintroduce yourself ("Hi, I'm NOVA...") in your replies — jump straight into answering. Only mention your name if the user directly asks who you are.
 - Keep replies SHORT. Answer only what was specifically asked — nothing extra, no padding, no unrelated details. A simple question gets a 1-2 sentence answer. Do not add extra sentences just to sound thorough. (Exception: when listing all services, use the one-name-per-line format above.)
 - Only share the company's phone/email/WhatsApp if the user explicitly asks for it. When someone shows interest (like booking a consultation), don't give out contact details unprompted — instead ask for THEIR name and phone/email so the team can reach out to them.
 
-LEAD CAPTURE: Once you've answered the user's question and they seem interested (asked about pricing, services, or booking), naturally ask for their name and either a phone number or email so the Stylaria team can follow up. Don't ask on the very first message — only after you've been genuinely helpful first. Ask once, don't repeat it every message if they've already declined or already given it.`;
+LEAD CAPTURE: Once you've answered the user's question and they seem interested (asked about pricing, services, or booking), trigger the form instead of asking in chat — set action to "show_form". Don't trigger it on the very first message — only after you've been genuinely helpful first. Don't trigger it again if the user already filled the form or declined.
+
+Respond ONLY in this JSON format, no markdown fences: {"reply": "your reply text", "action": "show_form" or null}`;
 
     // Gemini uses "contents" with role "user"/"model" instead of "user"/"assistant"
     const contents = [
@@ -149,9 +153,21 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
       return res.status(502).json({ error: "AI service error", details: errText });
     }
 
-    const data = await response.json();
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a reply.";
+const data = await response.json();
+    const rawText =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    let reply = "Sorry, I couldn't generate a reply.";
+    let action = null;
+
+    try {
+      const cleaned = rawText.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleaned);
+      reply = parsed.reply || reply;
+      action = parsed.action || null;
+    } catch (e) {
+      if (rawText) reply = rawText;
+    }
 
     // ---- Log every exchange (full chat history) ----
     if (process.env.LEADS_WEBHOOK_URL) {
@@ -194,7 +210,7 @@ LEAD CAPTURE: Once you've answered the user's question and they seem interested 
       }).catch((e) => console.error("Lead webhook failed:", e.message));
     }
 
-    return res.status(200).json({ reply });
+return res.status(200).json({ reply, action });
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({ error: "Internal server error", details: err.message });
