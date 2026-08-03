@@ -1,5 +1,5 @@
 // api/chat.js
-// NOVA AI Chat Backend — powered by Google Gemini (FREE tier) — Vercel Serverless Function
+// NOVA AI Chat Backend — powered by Google Gemini — Vercel Serverless Function
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -135,8 +135,9 @@ Respond ONLY in this JSON format, no markdown fences: {"reply": "your reply text
       { role: "user", parts: [{ text: message }] },
     ];
 
+    // FIX APPLIED HERE: Changed gemini-3.1-flash-lite to gemini-1.5-flash
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,9 +154,8 @@ Respond ONLY in this JSON format, no markdown fences: {"reply": "your reply text
       return res.status(502).json({ error: "AI service error", details: errText });
     }
 
-const data = await response.json();
-    const rawText =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const data = await response.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     let reply = "Sorry, I couldn't generate a reply.";
     let action = null;
@@ -194,7 +194,6 @@ const data = await response.json();
       var firstUserMsg = histArr.find(function (h) { return h.role === "user"; });
       var initialQuery = firstUserMsg ? firstUserMsg.content : message;
 
-      // Fire-and-forget — don't make the user wait for the sheet write
       fetch(process.env.LEADS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,7 +209,7 @@ const data = await response.json();
       }).catch((e) => console.error("Lead webhook failed:", e.message));
     }
 
-return res.status(200).json({ reply, action });
+    return res.status(200).json({ reply, action });
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({ error: "Internal server error", details: err.message });
